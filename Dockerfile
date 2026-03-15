@@ -32,18 +32,25 @@ RUN { \
         echo 'date.timezone = Europe/Kiev'; \
     } > /usr/local/etc/php/conf.d/opencart.ini
 
-# Copy application code
-COPY . /var/www/html/
-
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Ensure storage directories are writable
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && chmod -R 777 /var/www/html/system/storage \
-    && chmod -R 777 /var/www/html/image
+# Copy application code
+COPY . /var/www/html/
+
+# Ensure storage directories exist and are writable
+RUN mkdir -p /var/www/html/system/storage/cache \
+        /var/www/html/system/storage/logs \
+        /var/www/html/system/storage/download \
+        /var/www/html/system/storage/modification \
+        /var/www/html/system/storage/upload \
+        /var/www/html/image \
+    && chown -R www-data:www-data /var/www/html \
+    && find /var/www/html -type d -exec chmod 755 {} \; \
+    && find /var/www/html -type f -exec chmod 644 {} \; \
+    && chmod -R 775 /var/www/html/system/storage \
+    && chmod -R 775 /var/www/html/image
 
 EXPOSE 80
 
