@@ -8,8 +8,8 @@ system/storage/modification/*
 !system/storage/*/.htaccess
 
 # Config with credentials (generated at runtime)
-config.php
-admin/config.php
+/config.php
+/admin/config.php
 
 # Database dumps
 *.sql
