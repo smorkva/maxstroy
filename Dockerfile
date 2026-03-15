@@ -1,4 +1,4 @@
-FROM php:7.2-apache
+FROM php:7.4-apache
 
 # Install PHP extensions required by OpenCart
 RUN apt-get update && apt-get install -y \
@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
         libzip-dev \
         libcurl4-openssl-dev \
         unzip \
-    && docker-php-ext-configure gd --with-freetype-dir=/usr --with-jpeg-dir=/usr \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         gd \
         mysqli \
@@ -16,6 +16,13 @@ RUN apt-get update && apt-get install -y \
         zip \
         curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install ionCube Loader
+RUN curl -fSL https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz -o /tmp/ioncube.tar.gz \
+    && tar -xzf /tmp/ioncube.tar.gz -C /tmp \
+    && cp /tmp/ioncube/ioncube_loader_lin_7.4.so $(php -r 'echo ini_get("extension_dir");')/ \
+    && echo "zend_extension=ioncube_loader_lin_7.4.so" > /usr/local/etc/php/conf.d/00-ioncube.ini \
+    && rm -rf /tmp/ioncube /tmp/ioncube.tar.gz
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
