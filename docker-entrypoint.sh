@@ -2,17 +2,25 @@
 set -e
 
 # Generate config.php from environment variables
-APP_URL="${APP_URL:-http://localhost/}"
+# Use :- to handle both unset AND empty values (Coolify passes empty strings)
+: "${APP_URL:=http://localhost/}"
+: "${DB_HOSTNAME:=mysql}"
+: "${DB_USERNAME:=opencart}"
+: "${DB_PASSWORD:=opencart}"
+: "${DB_DATABASE:=opencart}"
+: "${DB_PORT:=3306}"
+: "${DB_PREFIX:=oc_}"
 
 # Ensure trailing slash
 [[ "$APP_URL" != */ ]] && APP_URL="${APP_URL}/"
 
-DB_HOSTNAME="${DB_HOSTNAME:-mysql}"
-DB_USERNAME="${DB_USERNAME:-opencart}"
-DB_PASSWORD="${DB_PASSWORD:-opencart}"
-DB_DATABASE="${DB_DATABASE:-opencart}"
-DB_PORT="${DB_PORT:-3306}"
-DB_PREFIX="${DB_PREFIX:-oc_}"
+echo "=== Environment ==="
+echo "APP_URL=${APP_URL}"
+echo "DB_HOSTNAME=${DB_HOSTNAME}"
+echo "DB_DATABASE=${DB_DATABASE}"
+echo "DB_USERNAME=${DB_USERNAME}"
+echo "DB_PORT=${DB_PORT}"
+echo "==================="
 
 APP_DIR="/var/www/html"
 
