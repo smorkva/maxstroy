@@ -1,9 +1,8 @@
-# Storage (keep directories via .gitkeep)
+# Storage (keep directories via .gitkeep, track modification/)
 system/storage/cache/*
 system/storage/logs/*
 system/storage/download/*
 system/storage/upload/*
-system/storage/modification/*
 !system/storage/*/.gitkeep
 !system/storage/*/.htaccess
 
