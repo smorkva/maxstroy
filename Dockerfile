@@ -30,6 +30,9 @@ RUN { \
         echo 'max_execution_time = 300'; \
         echo 'memory_limit = 256M'; \
         echo 'date.timezone = Europe/Kiev'; \
+        echo 'display_errors = Off'; \
+        echo 'error_reporting = E_ALL & ~E_NOTICE & ~E_WARNING & ~E_DEPRECATED'; \
+        echo 'log_errors = On'; \
     } > /usr/local/etc/php/conf.d/opencart.ini
 
 # Copy entrypoint script
