@@ -7,8 +7,7 @@ class ControllerStartupSeoUrl extends Controller {
 		}
 // echo "<!--";
 if(!isset($this->request->get['route'])){
-	$script_url = isset($this->request->server['SCRIPT_URL']) ? $this->request->server['SCRIPT_URL'] : (isset($this->request->server['REQUEST_URI']) ? parse_url($this->request->server['REQUEST_URI'], PHP_URL_PATH) : '/');
-	$parts = explode('/', $script_url);
+	$parts = explode('/', $this->request->server['SCRIPT_URL']);
 
 	// remove any empty arrays from trailing
 	if (utf8_strlen(end($parts)) == 0) {

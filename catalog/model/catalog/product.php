@@ -540,10 +540,4 @@ class ModelCatalogProduct extends Model {
 			return 0;
 		}
 	}
-
-	public function getTopSeller($product_id) {
-		$query = $this->db->query("SELECT SUM(quantity) AS total FROM " . DB_PREFIX . "order_product op WHERE op.product_id = '" . (int)$product_id . "'");
-
-		return array('total' => ($query->row['total'] ? (int)$query->row['total'] : 0));
-	}
 }
