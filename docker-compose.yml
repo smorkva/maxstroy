@@ -1,0 +1,24 @@
+services:
+  maxstroy:
+    build: .
+    environment:
+      - APP_URL=${APP_URL:-http://localhost/}
+      - DB_HOSTNAME=${DB_HOSTNAME:-mysql}
+      - DB_USERNAME=${DB_USERNAME:-opencart}
+      - DB_PASSWORD=${DB_PASSWORD:-opencart}
+      - DB_DATABASE=${DB_DATABASE:-opencart}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_PREFIX=${DB_PREFIX:-oc_}
+    volumes:
+      - images:/var/www/html/image
+      - storage:/var/www/html/system/storage
+    networks:
+      - coolify
+
+volumes:
+  images:
+  storage:
+
+networks:
+  coolify:
+    external: true

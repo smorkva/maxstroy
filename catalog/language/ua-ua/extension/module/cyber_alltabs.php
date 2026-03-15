@@ -1,0 +1,12 @@
+<?php
+// Heading
+$_['heading_title'] = 'ВКЛАДКИ';
+
+// Text
+$_['text_tax'] = 'Без ПДВ:';
+$_['tab_latest'] = 'Новинки';
+$_['tab_bestseller'] = 'Хіт продажу';
+$_['tab_featured'] = 'Рекомендуємо';
+$_['tab_special'] = 'Акція';
+$_['tab_popular'] = 'Популярні';
+$_['text_reviews_title'] = 'відгуків';

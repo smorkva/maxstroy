@@ -1,0 +1,23 @@
+# Storage
+system/storage/cache/*
+system/storage/logs/*
+system/storage/download/*
+system/storage/upload/*
+system/storage/modification/*
+!system/storage/cache/.htaccess
+!system/storage/logs/.htaccess
+!system/storage/download/.htaccess
+!system/storage/upload/.htaccess
+!system/storage/modification/.htaccess
+
+# Config with credentials (generated at runtime)
+config.php
+admin/config.php
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db

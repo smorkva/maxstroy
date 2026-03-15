@@ -1,0 +1,72 @@
+.stickers-ns {
+	right: 5px;
+	position: absolute;
+	top: 5px;
+	transition: all 0.15s ease 0s;
+	z-index:10;
+}
+.stickers-ns .fa{
+	font-size: 12px;
+	vertical-align: middle;
+}
+.stickers-ns > .sticker-ns {
+	margin-bottom: 4px;
+}
+.sticker-ns {
+	clear: right;
+	float: right;
+	font-size: 12px;
+	font-weight: 600;
+	padding:1px 5px;
+	position: relative;
+	border-radius:2px;
+	line-height:18px;
+}
+.product-item:hover .stickers-ns, .product-block:hover .stickers-ns , .thumbnails:hover .stickers-ns{
+	opacity:0;
+	transition: all 0.15s  ease 0s;
+	z-index:-1;
+}
+.product-thumb:hover .stickers-ns{
+	opacity:0;
+	transition: all 0.15s  ease 0s;
+	z-index:-1;
+}
+.sticker-ns.procent-skidka {
+	background: #e55b4c none repeat scroll 0 0;
+	color: #fff;
+	font-weight: 600;
+	opacity: 0.75;
+	z-index: 99;
+	transition: all 0.15s  ease 0s;
+}
+
+.tooltip-inner {
+  background-color: #eee;
+  color:#333;
+  box-shadow:0px 0px 3px rgba(0,0,0,0.25);
+}
+.tooltip.top .tooltip-arrow {
+  border-top-color: #eee;
+}
+.tooltip.top-left .tooltip-arrow {
+  border-top-color: #eee;
+}
+.tooltip.top-right .tooltip-arrow {
+  border-top-color: #eee;
+}
+.tooltip.right .tooltip-arrow {
+  border-right-color: #eee;
+}
+.tooltip.left .tooltip-arrow {
+  border-left-color: #eee;
+}
+.tooltip.bottom .tooltip-arrow {
+  border-bottom-color: #eee;
+}
+.tooltip.bottom-left .tooltip-arrow {
+  border-bottom-color: #eee;
+}
+.tooltip.bottom-right .tooltip-arrow {
+  border-bottom-color: #eee;
+}
