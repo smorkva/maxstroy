@@ -17,6 +17,12 @@
           <?php } ?>
           <?php } ?>
         </div>
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
         <?php } ?>
         <?php if ($product['price']) { ?>
         <p class="price">

@@ -31,6 +31,17 @@ class Cart {
 	}
 
 	public function getProducts() {
+		if (!empty($this->session->data['shipping_address']['zone_id'])) {
+			$zone_id = $this->session->data['shipping_address']['zone_id'];
+		} elseif (!empty($this->session->data['prmn.city_manager']['zone_id'])){
+			$zone_id = $this->session->data['prmn.city_manager']['zone_id'];
+		} else {
+			$zone_id = 0;
+		}
+
+		$selected_mid = isset($this->session->data['multistore_id']) ? (int)$this->session->data['multistore_id'] : 0;
+		$mid_filter = $selected_mid ? " AND m.multistore_id = '".$selected_mid."'" : "";
+
 		$product_data = array();
 
 		$cart_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "cart WHERE api_id = '" . (isset($this->session->data['api_id']) ? (int)$this->session->data['api_id'] : 0) . "' AND customer_id = '" . (int)$this->customer->getId() . "' AND session_id = '" . $this->db->escape($this->session->getId()) . "'");
@@ -38,7 +49,7 @@ class Cart {
 		foreach ($cart_query->rows as $cart) {
 			$stock = true;
 
-			$product_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_to_store p2s LEFT JOIN " . DB_PREFIX . "product p ON (p2s.product_id = p.product_id) LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) WHERE p2s.store_id = '" . (int)$this->config->get('config_store_id') . "' AND p2s.product_id = '" . (int)$cart['product_id'] . "' AND pd.language_id = '" . (int)$this->config->get('config_language_id') . "' AND p.date_available <= NOW() AND p.status = '1'");
+			$product_query = $this->db->query("SELECT *, (SELECT SUM(p2m.quantity) FROM " . DB_PREFIX . "multistore m LEFT JOIN " . DB_PREFIX . "product_to_multistore p2m ON (m.multistore_id = p2m.multistore_id) WHERE p2m.product_id = p.product_id".$mid_filter." AND ((SELECT COUNT(*) FROM `" . DB_PREFIX . "zone_to_geo_zone` ztgz WHERE ztgz.zone_id = '".(int)$zone_id."' AND ztgz.geo_zone_id = m.geo_zone_id) > 0 OR m.geo_zone_id = 0)) AS 'multistore_quantity' FROM " . DB_PREFIX . "product_to_store p2s LEFT JOIN " . DB_PREFIX . "product p ON (p2s.product_id = p.product_id) LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) WHERE p2s.store_id = '" . (int)$this->config->get('config_store_id') . "' AND p2s.product_id = '" . (int)$cart['product_id'] . "' AND pd.language_id = '" . (int)$this->config->get('config_language_id') . "' AND p.date_available <= NOW() AND p.status = '1'");
 
 			if ($product_query->num_rows && ($cart['quantity'] > 0)) {
 				$option_price = 0;
@@ -52,7 +63,7 @@ class Cart {
 
 					if ($option_query->num_rows) {
 						if ($option_query->row['type'] == 'select' || $option_query->row['type'] == 'radio') {
-							$option_value_query = $this->db->query("SELECT pov.option_value_id, ovd.name, pov.quantity, pov.subtract, pov.price, pov.price_prefix, pov.points, pov.points_prefix, pov.weight, pov.weight_prefix FROM " . DB_PREFIX . "product_option_value pov LEFT JOIN " . DB_PREFIX . "option_value ov ON (pov.option_value_id = ov.option_value_id) LEFT JOIN " . DB_PREFIX . "option_value_description ovd ON (ov.option_value_id = ovd.option_value_id) WHERE pov.product_option_value_id = '" . (int)$value . "' AND pov.product_option_id = '" . (int)$product_option_id . "' AND ovd.language_id = '" . (int)$this->config->get('config_language_id') . "'");
+							$option_value_query = $this->db->query("SELECT pov.option_value_id, ovd.name, pov.quantity, pov.subtract, pov.price, pov.price_prefix, pov.points, pov.points_prefix, pov.weight, pov.weight_prefix,(SELECT SUM(p2m.quantity) FROM " . DB_PREFIX . "multistore m LEFT JOIN " . DB_PREFIX . "product_option_value_to_multistore p2m ON (m.multistore_id = p2m.multistore_id) WHERE p2m.product_option_value_id  = ".(int)$value.$mid_filter." AND ((SELECT COUNT(*) FROM `" . DB_PREFIX . "zone_to_geo_zone` ztgz WHERE ztgz.zone_id = '".(int)$zone_id."' AND ztgz.geo_zone_id = m.geo_zone_id) > 0 OR m.geo_zone_id = 0)) AS 'multistore_quantity' FROM " . DB_PREFIX . "product_option_value pov LEFT JOIN " . DB_PREFIX . "option_value ov ON (pov.option_value_id = ov.option_value_id) LEFT JOIN " . DB_PREFIX . "option_value_description ovd ON (ov.option_value_id = ovd.option_value_id) WHERE pov.product_option_value_id = '" . (int)$value . "' AND pov.product_option_id = '" . (int)$product_option_id . "' AND ovd.language_id = '" . (int)$this->config->get('config_language_id') . "'");
 
 							if ($option_value_query->num_rows) {
 								if ($option_value_query->row['price_prefix'] == '+') {
@@ -73,7 +84,7 @@ class Cart {
 									$option_weight -= $option_value_query->row['weight'];
 								}
 
-								if ($option_value_query->row['subtract'] && (!$option_value_query->row['quantity'] || ($option_value_query->row['quantity'] < $cart['quantity']))) {
+								if ($option_value_query->row['subtract'] && (!$option_value_query->row['multistore_quantity'] || ($option_value_query->row['multistore_quantity'] < $cart['quantity']))) {
 									$stock = false;
 								}
 
@@ -85,7 +96,7 @@ class Cart {
 									'name'                    => $option_query->row['name'],
 									'value'                   => $option_value_query->row['name'],
 									'type'                    => $option_query->row['type'],
-									'quantity'                => $option_value_query->row['quantity'],
+									'quantity'                => $option_value_query->row['multistore_quantity'],
 									'subtract'                => $option_value_query->row['subtract'],
 									'price'                   => $option_value_query->row['price'],
 									'price_prefix'            => $option_value_query->row['price_prefix'],
@@ -97,7 +108,7 @@ class Cart {
 							}
 						} elseif ($option_query->row['type'] == 'checkbox' && is_array($value)) {
 							foreach ($value as $product_option_value_id) {
-								$option_value_query = $this->db->query("SELECT pov.option_value_id, pov.quantity, pov.subtract, pov.price, pov.price_prefix, pov.points, pov.points_prefix, pov.weight, pov.weight_prefix, ovd.name FROM " . DB_PREFIX . "product_option_value pov LEFT JOIN " . DB_PREFIX . "option_value_description ovd ON (pov.option_value_id = ovd.option_value_id) WHERE pov.product_option_value_id = '" . (int)$product_option_value_id . "' AND pov.product_option_id = '" . (int)$product_option_id . "' AND ovd.language_id = '" . (int)$this->config->get('config_language_id') . "'");
+								$option_value_query = $this->db->query("SELECT pov.option_value_id, pov.quantity, pov.subtract, pov.price, pov.price_prefix, pov.points, pov.points_prefix, pov.weight, pov.weight_prefix, ovd.name,(SELECT SUM(p2m.quantity) FROM " . DB_PREFIX . "multistore m LEFT JOIN " . DB_PREFIX . "product_option_value_to_multistore p2m ON (m.multistore_id = p2m.multistore_id) WHERE p2m.product_option_value_id  = ".(int)$value.$mid_filter." AND ((SELECT COUNT(*) FROM `" . DB_PREFIX . "zone_to_geo_zone` ztgz WHERE ztgz.zone_id = '".(int)$zone_id."' AND ztgz.geo_zone_id = m.geo_zone_id) > 0 OR m.geo_zone_id = 0)) AS 'multistore_quantity' FROM " . DB_PREFIX . "product_option_value pov LEFT JOIN " . DB_PREFIX . "option_value_description ovd ON (pov.option_value_id = ovd.option_value_id) WHERE pov.product_option_value_id = '" . (int)$product_option_value_id . "' AND pov.product_option_id = '" . (int)$product_option_id . "' AND ovd.language_id = '" . (int)$this->config->get('config_language_id') . "'");
 
 								if ($option_value_query->num_rows) {
 									if ($option_value_query->row['price_prefix'] == '+') {
@@ -118,7 +129,7 @@ class Cart {
 										$option_weight -= $option_value_query->row['weight'];
 									}
 
-									if ($option_value_query->row['subtract'] && (!$option_value_query->row['quantity'] || ($option_value_query->row['quantity'] < $cart['quantity']))) {
+									if ($option_value_query->row['subtract'] && (!$option_value_query->row['multistore_quantity'] || ($option_value_query->row['multistore_quantity'] < $cart['quantity']))) {
 										$stock = false;
 									}
 
@@ -130,7 +141,7 @@ class Cart {
 										'name'                    => $option_query->row['name'],
 										'value'                   => $option_value_query->row['name'],
 										'type'                    => $option_query->row['type'],
-										'quantity'                => $option_value_query->row['quantity'],
+										'quantity'                => $option_value_query->row['multistore_quantity'],
 										'subtract'                => $option_value_query->row['subtract'],
 										'price'                   => $option_value_query->row['price'],
 										'price_prefix'            => $option_value_query->row['price_prefix'],
@@ -213,7 +224,7 @@ class Cart {
 				}
 
 				// Stock
-				if (!$product_query->row['quantity'] || ($product_query->row['quantity'] < $cart['quantity'])) {
+				if (!$product_query->row['multistore_quantity'] || ($product_query->row['multistore_quantity'] < $cart['quantity'])) {
 					$stock = false;
 				}
 

@@ -56,6 +56,19 @@ class ModelCatalogImportproduct extends Model {
 
 
 	public function importProduct($product_id, $data) {
+		// Preserve existing categories/stores if not provided in import data
+		if (empty($data['product_category'])) {
+			$existing = $this->db->query("SELECT category_id FROM " . DB_PREFIX . "product_to_category WHERE product_id = '" . (int)$product_id . "'");
+			$cats = array();
+			foreach ($existing->rows as $r) { $cats[] = $r['category_id']; }
+			if (!empty($cats)) $data['product_category'] = $cats;
+		}
+		if (empty($data['product_store'])) {
+			$existing = $this->db->query("SELECT store_id FROM " . DB_PREFIX . "product_to_store WHERE product_id = '" . (int)$product_id . "'");
+			$stores = array();
+			foreach ($existing->rows as $r) { $stores[] = $r['store_id']; }
+			if (!empty($stores)) $data['product_store'] = $stores;
+		}
 		$this->db->query("UPDATE " . DB_PREFIX . "product SET model = '" . $this->db->escape($data['model']) . "', sku = '" . $this->db->escape($data['sku']) . "', upc = '" . $this->db->escape($data['upc']) . "', ean = '" . $this->db->escape($data['ean']) . "', jan = '" . $this->db->escape($data['jan']) . "', isbn = '" . $this->db->escape($data['isbn']) . "', mpn = '" . $this->db->escape($data['mpn']) . "', location = '" . $this->db->escape($data['location']) . "', quantity = '" . (int)$data['quantity'] . "', minimum = '" . (int)$data['minimum'] . "', subtract = '" . (int)$data['subtract'] . "', stock_status_id = '" . (int)$data['stock_status_id'] . "', date_available = '" . $this->db->escape($data['date_available']) . "', manufacturer_id = '" . (int)$data['manufacturer_id'] . "', shipping = '" . (int)$data['shipping'] . "', price = '" . (float)$data['price'] . "', price_zak = '" . (float)$data['price'] . "', points = '" . (int)$data['points'] . "', weight = '" . (float)$data['weight'] . "', weight_class_id = '" . (int)$data['weight_class_id'] . "', length = '" . (float)$data['length'] . "', width = '" . (float)$data['width'] . "', height = '" . (float)$data['height'] . "', length_class_id = '" . (int)$data['length_class_id'] . "', status = '" . (int)$data['status'] . "', tax_class_id = '" . (int)$data['tax_class_id'] . "', sort_order = '" . (int)$data['sort_order'] . "', date_modified = NOW() WHERE product_id = '" . (int)$product_id . "'");
 
 		if (isset($data['image'])) {
@@ -70,9 +83,27 @@ class ModelCatalogImportproduct extends Model {
 
 		$this->db->query("DELETE FROM " . DB_PREFIX . "product_to_store WHERE product_id = '" . (int)$product_id . "'");
 
-		if (isset($data['product_store'])) {
+		$has_store_link = false;
+		if (isset($data['product_store']) && !empty($data['product_store'])) {
 			foreach ($data['product_store'] as $store_id) {
 				$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_store SET product_id = '" . (int)$product_id . "', store_id = '" . (int)$store_id . "'");
+				$has_store_link = true;
+			}
+		}
+		// Fallback to default store so product stays visible after re-import
+		if (!$has_store_link) {
+			$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_store SET product_id = '" . (int)$product_id . "', store_id = '0'");
+		}
+		// Auto-populate product_to_multistore so quantity works on multistore catalog model
+		$ms_table_check = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "multistore'");
+		if ($ms_table_check->num_rows) {
+			$ms_query = $this->db->query("SELECT multistore_id, infinity FROM `" . DB_PREFIX . "multistore` WHERE status = 1");
+			foreach ($ms_query->rows as $ms) {
+				$exists = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "product_to_multistore` WHERE product_id = '" . (int)$product_id . "' AND multistore_id = '" . (int)$ms['multistore_id'] . "'");
+				if (!$exists->num_rows) {
+					$qty = (int)$ms['infinity'] ? 99999 : (int)$data['quantity'];
+					$this->db->query("INSERT INTO `" . DB_PREFIX . "product_to_multistore` (product_id, multistore_id, quantity) VALUES ('" . (int)$product_id . "', '" . (int)$ms['multistore_id'] . "', '" . $qty . "')");
+				}
 			}
 		}
 
@@ -245,13 +276,34 @@ class ModelCatalogImportproduct extends Model {
 			}
 		}
 
-		if (isset($data['product_store'])) {
+		$has_store_link = false;
+		if (isset($data['product_store']) && !empty($data['product_store'])) {
 			foreach ($data['product_store'] as $store_id) {
 				$query = "SELECT count(*) as exist FROM " . DB_PREFIX . "product_to_store WHERE product_id = '" . (int)$product_id . "' AND store_id = '" . (int)$store_id . "'";
 				$res = $this->db->query($query);
-				
+
 				if(!$res->row['exist'])
 					$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_store SET product_id = '" . (int)$product_id . "', store_id = '" . (int)$store_id . "'");
+				$has_store_link = true;
+			}
+		}
+		// Fallback to default store so product is visible
+		if (!$has_store_link) {
+			$check = $this->db->query("SELECT 1 FROM " . DB_PREFIX . "product_to_store WHERE product_id = '" . (int)$product_id . "' AND store_id = '0'");
+			if (!$check->num_rows) {
+				$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_store SET product_id = '" . (int)$product_id . "', store_id = '0'");
+			}
+		}
+		// Auto-populate product_to_multistore so quantity works on multistore catalog model
+		$ms_table_check = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "multistore'");
+		if ($ms_table_check->num_rows) {
+			$ms_query = $this->db->query("SELECT multistore_id, infinity FROM `" . DB_PREFIX . "multistore` WHERE status = 1");
+			foreach ($ms_query->rows as $ms) {
+				$exists = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "product_to_multistore` WHERE product_id = '" . (int)$product_id . "' AND multistore_id = '" . (int)$ms['multistore_id'] . "'");
+				if (!$exists->num_rows) {
+					$qty = (int)$ms['infinity'] ? 99999 : (int)$data['quantity'];
+					$this->db->query("INSERT INTO `" . DB_PREFIX . "product_to_multistore` (product_id, multistore_id, quantity) VALUES ('" . (int)$product_id . "', '" . (int)$ms['multistore_id'] . "', '" . $qty . "')");
+				}
 			}
 		}
 
@@ -369,6 +421,19 @@ class ModelCatalogImportproduct extends Model {
 	}
 
 	public function editProduct($product_id, $data) {
+		// Preserve existing categories/stores if not provided in import data
+		if (empty($data['product_category'])) {
+			$existing = $this->db->query("SELECT category_id FROM " . DB_PREFIX . "product_to_category WHERE product_id = '" . (int)$product_id . "'");
+			$cats = array();
+			foreach ($existing->rows as $r) { $cats[] = $r['category_id']; }
+			if (!empty($cats)) $data['product_category'] = $cats;
+		}
+		if (empty($data['product_store'])) {
+			$existing = $this->db->query("SELECT store_id FROM " . DB_PREFIX . "product_to_store WHERE product_id = '" . (int)$product_id . "'");
+			$stores = array();
+			foreach ($existing->rows as $r) { $stores[] = $r['store_id']; }
+			if (!empty($stores)) $data['product_store'] = $stores;
+		}
 		$this->db->query("UPDATE " . DB_PREFIX . "product SET model = '" . $this->db->escape($data['model']) . "', sku = '" . $this->db->escape($data['sku']) . "', upc = '" . $this->db->escape($data['upc']) . "', ean = '" . $this->db->escape($data['ean']) . "', jan = '" . $this->db->escape($data['jan']) . "', isbn = '" . $this->db->escape($data['isbn']) . "', mpn = '" . $this->db->escape($data['mpn']) . "', location = '" . $this->db->escape($data['location']) . "', quantity = '" . (int)$data['quantity'] . "', minimum = '" . (int)$data['minimum'] . "', subtract = '" . (int)$data['subtract'] . "', stock_status_id = '" . (int)$data['stock_status_id'] . "', date_available = '" . $this->db->escape($data['date_available']) . "', manufacturer_id = '" . (int)$data['manufacturer_id'] . "', shipping = '" . (int)$data['shipping'] . "', price = '" . (float)$data['price'] . "', points = '" . (int)$data['points'] . "', weight = '" . (float)$data['weight'] . "', weight_class_id = '" . (int)$data['weight_class_id'] . "', length = '" . (float)$data['length'] . "', width = '" . (float)$data['width'] . "', height = '" . (float)$data['height'] . "', length_class_id = '" . (int)$data['length_class_id'] . "', status = '" . (int)$data['status'] . "', tax_class_id = '" . (int)$data['tax_class_id'] . "', sort_order = '" . (int)$data['sort_order'] . "', date_modified = NOW() WHERE product_id = '" . (int)$product_id . "'");
 
 		if (isset($data['image'])) {
@@ -383,9 +448,27 @@ class ModelCatalogImportproduct extends Model {
 
 		$this->db->query("DELETE FROM " . DB_PREFIX . "product_to_store WHERE product_id = '" . (int)$product_id . "'");
 
-		if (isset($data['product_store'])) {
+		$has_store_link = false;
+		if (isset($data['product_store']) && !empty($data['product_store'])) {
 			foreach ($data['product_store'] as $store_id) {
 				$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_store SET product_id = '" . (int)$product_id . "', store_id = '" . (int)$store_id . "'");
+				$has_store_link = true;
+			}
+		}
+		// Fallback to default store so product stays visible
+		if (!$has_store_link) {
+			$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_store SET product_id = '" . (int)$product_id . "', store_id = '0'");
+		}
+		// Auto-populate product_to_multistore so quantity works on multistore catalog model
+		$ms_table_check = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "multistore'");
+		if ($ms_table_check->num_rows) {
+			$ms_query = $this->db->query("SELECT multistore_id, infinity FROM `" . DB_PREFIX . "multistore` WHERE status = 1");
+			foreach ($ms_query->rows as $ms) {
+				$exists = $this->db->query("SELECT 1 FROM `" . DB_PREFIX . "product_to_multistore` WHERE product_id = '" . (int)$product_id . "' AND multistore_id = '" . (int)$ms['multistore_id'] . "'");
+				if (!$exists->num_rows) {
+					$qty = (int)$ms['infinity'] ? 99999 : (int)$data['quantity'];
+					$this->db->query("INSERT INTO `" . DB_PREFIX . "product_to_multistore` (product_id, multistore_id, quantity) VALUES ('" . (int)$product_id . "', '" . (int)$ms['multistore_id'] . "', '" . $qty . "')");
+				}
 			}
 		}
 

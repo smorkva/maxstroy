@@ -111,6 +111,12 @@
 				<p class="price" style="font-weight:bold;font-size:13px">
 				<?php echo $product['stock'];//);//($product['special']):'В наличии':'Под заказ' ?>
 				</p>
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
 				<?php if ($product['price']) { ?>
                 <p class="price" style="font-weight:bold;font-size:15px">
                   <?php if (!$product['special']) { ?>

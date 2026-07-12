@@ -93,7 +93,14 @@ class ControllerApiOrder extends Controller {
 				}
 			}
 
-			if (!$json) {
+			if (!$json)
+					if (!empty($this->request->post['multistore_id'])) {
+						$order_data['multistore_id'] = $this->request->post['multistore_id'];
+					} elseif (!empty($this->session->data['multistore_id'])) {
+						$order_data['multistore_id'] = $this->session->data['multistore_id'];
+					} else {
+						$order_data['multistore_id'] = '';
+					} {
 				$json['success'] = $this->language->get('text_success');
 				
 				$order_data = array();

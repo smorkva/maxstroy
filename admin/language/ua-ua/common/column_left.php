@@ -36,6 +36,7 @@ $_['text_manufacturer']              = 'Производители';
 $_['text_option']                    = 'Опции';
 $_['text_order']                     = 'Заказы';
 $_['text_order_status']              = 'Статус заказов';
+$_['text_multistores'] = 'Склади';
 $_['text_product']                   = 'Товары';
 $_['text_reports']                   = 'Отчеты';
 $_['text_report_sale']               = 'Продажи';

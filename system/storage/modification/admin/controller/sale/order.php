@@ -842,6 +842,9 @@ class ControllerSaleOrder extends Controller {
 			/*end added*/
 		
 			$data['orders'][] = array(
+
+        
+					'multistore_id'      => isset($result['multistore_id']) ? $result['multistore_id'] : 0,
 				'order_id'      => $result['order_id'],
 				'customer'      => $result['customer'],
 				'order_status'  => $result['order_status'] ? $result['order_status'] : $this->language->get('text_missing'),
@@ -1094,6 +1097,19 @@ class ControllerSaleOrder extends Controller {
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
 
+
+        
+					$data['multistores'] = array();
+					$this->load->model('extension/module/multistore');
+					foreach($this->model_extension_module_multistore->getMultistores() as $multistore){
+						$data['multistores'][] = array(
+							'multistore_id' => $multistore['multistore_id'],
+							'name' => $multistore['name']
+						);
+					}
+
+					$data['column_multistore'] = $this->language->get('column_multistore');
+					$data['text_select'] = $this->language->get('text_select');
 		$this->response->setOutput($this->load->view('sale/order_list', $data));
 	}
 
@@ -1236,6 +1252,23 @@ class ControllerSaleOrder extends Controller {
 		if (!empty($order_info)) {
 			$data['order_id'] = $this->request->get['order_id'];
 			$data['store_id'] = $order_info['store_id'];
+        
+					$data['multistores'] = array();
+					$this->load->model('extension/module/multistore');
+					foreach($this->model_extension_module_multistore->getMultistores() as $multistore){
+						$data['multistores'][] = array(
+							'multistore_id' => $multistore['multistore_id'],
+							'name' => $multistore['name']
+						);
+					}
+
+					if (!empty($order_info['multistore_id'])) {
+						$data['multistore_id'] = $order_info['multistore_id'];
+					} else {
+						$data['multistore_id'] = '';
+					}
+
+					$data['entry_multistore'] = $this->language->get('entry_multistore');
 			$data['store_url'] = $this->request->server['HTTPS'] ? HTTPS_CATALOG : HTTP_CATALOG;
 
 			$data['customer'] = $order_info['customer'];
@@ -1608,6 +1641,17 @@ class ControllerSaleOrder extends Controller {
 			$data['order_id'] = $this->request->get['order_id'];
 
 			$data['store_id'] = $order_info['store_id'];
+        
+					if (!empty($order_info['multistore_id'])) {
+						$this->load->model('extension/module/multistore');
+						$multistore_info = $this->model_extension_module_multistore->getMultistore($order_info['multistore_id']);
+						if ($multistore_info) {
+							$data['multistore_id'] = $multistore_info['multistore_id'];
+							$data['multistore'] = $multistore_info['name'];
+						}
+
+						$data['text_multistore'] = $this->language->get('text_multistore');
+					}
 			$data['store_name'] = $order_info['store_name'];
 			
 			if ($order_info['store_id'] == 0) {

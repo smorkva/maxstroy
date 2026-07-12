@@ -442,7 +442,11 @@ class ControllerProductCategory extends Controller {
 					}
 				}
 		
+
+				
+					$multistore = false;
 				$data['products'][] = array(
+					'multistore'  => $multistore,
 					'options'	  => $options,
 					'date_end'	  => $special_date_end, 
 	

@@ -124,7 +124,13 @@
       </div>
       <div class="buttons clearfix">
         <div class="pull-left"><a href="<?php echo $continue; ?>" class="btn btn-default"><?php echo $button_shopping; ?></a></div>
-        <div class="pull-right"><a href="<?php echo $checkout; ?>" class="btn btn-primary"><?php echo $button_checkout; ?></a></div>
+        <div class="pull-right">
+          <?php if ($error_warning) { ?>
+          <button class="btn btn-primary" disabled><?php echo $button_checkout; ?></button>
+          <?php } else { ?>
+          <a href="<?php echo $checkout; ?>" class="btn btn-primary"><?php echo $button_checkout; ?></a>
+          <?php } ?>
+        </div>
       </div>
       <?php echo $content_bottom; ?></div>
     <?php echo $column_right; ?></div>

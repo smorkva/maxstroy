@@ -89,7 +89,7 @@ class ControllerCommonHeader extends Controller {
 		$data['color_schem'] = $this->config->get('config_design_template_color_theme');
 		$design_fastorder = $this->config->get('config_select_design_fastorder');
 		$callbackpro = $this->config->get('callbackpro');
-		$design_callback = $callbackpro['select_design_theme_callback'];
+		$design_callback = !empty($callbackpro) ? $callbackpro['select_design_theme_callback'] : '';
 		$design_special_timer = $this->config->get('config_design_special_timer');
 		$minify_css = (!empty($this->config->get('config_minify_css')) ? 1 : 0);
 		$minify_js = (!empty($this->config->get('config_minify_js')) ? 1 : 0);
@@ -345,6 +345,7 @@ class ControllerCommonHeader extends Controller {
 
 		$data['language'] = $this->load->controller('common/language');
 		$data['currency'] = $this->load->controller('common/currency');
+		$data['multistore_selector'] = $this->load->controller('common/multistore_selector');
 		$data['search'] = $this->load->controller('common/search');
 		$data['cart'] = $this->load->controller('common/cart');
 

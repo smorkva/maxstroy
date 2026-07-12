@@ -280,6 +280,7 @@ $('#messageLoadPage').hide();
 		</div>
 		<div class="pull-right box-currency"><?php echo $currency; ?></div>
 		<div class="pull-right box-language"><?php echo $language; ?></div>
+		<?php if ($multistore_selector) { ?><div class="pull-right box-multistore"><?php echo $multistore_selector; ?></div><?php } ?>
 	</div>
   </div>
   </div>

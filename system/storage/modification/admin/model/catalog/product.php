@@ -60,6 +60,40 @@ class ModelCatalogProduct extends Model {
 
 						foreach ($product_option['product_option_value'] as $product_option_value) {
 							$this->db->query("INSERT INTO " . DB_PREFIX . "product_option_value SET product_option_id = '" . (int)$product_option_id . "', product_id = '" . (int)$product_id . "', option_id = '" . (int)$product_option['option_id'] . "', option_value_id = '" . (int)$product_option_value['option_value_id'] . "', quantity = '" . (int)$product_option_value['quantity'] . "', subtract = '" . (int)$product_option_value['subtract'] . "', price = '" . (float)$product_option_value['price'] . "', price_prefix = '" . $this->db->escape($product_option_value['price_prefix']) . "', points = '" . (int)$product_option_value['points'] . "', points_prefix = '" . $this->db->escape($product_option_value['points_prefix']) . "', weight = '" . (float)$product_option_value['weight'] . "', weight_prefix = '" . $this->db->escape($product_option_value['weight_prefix']) . "'");
+
+				
+
+					$product_option_value_id = $this->db->getLastId();
+
+					foreach ($product_option_value['multistores'] as $multistore_id => $quantity) {
+						$this->db->query("
+							INSERT INTO " . DB_PREFIX . "product_option_value_to_multistore
+							SET
+								product_option_value_id = '" . (int)$product_option_value_id . "',
+								product_id = '" . (int)$product_id . "',
+								multistore_id = '" . (int)$multistore_id . "',
+								quantity = '" . (int)$quantity . "'
+						");
+					}
+
+					$this->db->query("UPDATE " . DB_PREFIX . "product_option_value pov SET quantity = (SELECT SUM(quantity) as quantity FROM `" . DB_PREFIX . "product_option_value_to_multistore` pov2m WHERE pov2m.product_option_value_id = pov.product_option_value_id) WHERE pov.product_option_value_id = '" . (int)$product_option_value['product_option_value_id'] . "'");
+
+				
+
+					$product_option_value_id = $this->db->getLastId();
+
+					foreach ($product_option_value['multistores'] as $multistore_id => $quantity) {
+						$this->db->query("
+							INSERT INTO " . DB_PREFIX . "product_option_value_to_multistore
+							SET
+								product_option_value_id = '" . (int)$product_option_value_id . "',
+								product_id = '" . (int)$product_id . "',
+								multistore_id = '" . (int)$multistore_id . "',
+								quantity = '" . (int)$quantity . "'
+						");
+					}
+
+					$this->db->query("UPDATE " . DB_PREFIX . "product_option_value pov SET quantity = (SELECT SUM(quantity) as quantity FROM `" . DB_PREFIX . "product_option_value_to_multistore` pov2m WHERE pov2m.product_option_value_id = pov.product_option_value_id) WHERE pov.product_option_value_id = '" . (int)$product_option_value['product_option_value_id'] . "'");
 						}
 					}
 				} else {
@@ -92,6 +126,24 @@ class ModelCatalogProduct extends Model {
 			}
 		}
 
+
+				
+					if (isset($data['multistores'])) {
+						foreach ($data['multistores'] as $multistore_id => $quantity) {
+							$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_multistore SET product_id = '" . (int)$product_id . "', multistore_id = '" . (int)$multistore_id . "', quantity = '" . (int)$quantity . "'");
+						}
+
+						$this->db->query("UPDATE " . DB_PREFIX . "product p SET quantity = (SELECT SUM(quantity) AS quantity FROM `" . DB_PREFIX . "product_to_multistore` op2m WHERE op2m.product_id = p.product_id) WHERE p.product_id = '" . (int)$product_id . "'");
+					}
+
+				
+					if (isset($data['multistores'])) {
+						foreach ($data['multistores'] as $multistore_id => $quantity) {
+							$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_multistore SET product_id = '" . (int)$product_id . "', multistore_id = '" . (int)$multistore_id . "', quantity = '" . (int)$quantity . "'");
+						}
+
+						$this->db->query("UPDATE " . DB_PREFIX . "product p SET quantity = (SELECT SUM(quantity) AS quantity FROM `" . DB_PREFIX . "product_to_multistore` op2m WHERE op2m.product_id = p.product_id) WHERE p.product_id = '" . (int)$product_id . "'");
+					}
 		if (isset($data['product_category'])) {
 			foreach ($data['product_category'] as $category_id) {
 				$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_category SET product_id = '" . (int)$product_id . "', category_id = '" . (int)$category_id . "'");
@@ -197,6 +249,10 @@ class ModelCatalogProduct extends Model {
 
 		$this->db->query("DELETE FROM " . DB_PREFIX . "product_option WHERE product_id = '" . (int)$product_id . "'");
 		$this->db->query("DELETE FROM " . DB_PREFIX . "product_option_value WHERE product_id = '" . (int)$product_id . "'");
+				
+					$this->db->query("DELETE FROM " . DB_PREFIX . "product_option_value_to_multistore WHERE product_id = '" . (int)$product_id . "'");
+				
+					$this->db->query("DELETE FROM " . DB_PREFIX . "product_option_value_to_multistore WHERE product_id = '" . (int)$product_id . "'");
 
 		if (isset($data['product_option'])) {
 			foreach ($data['product_option'] as $product_option) {
@@ -248,6 +304,17 @@ class ModelCatalogProduct extends Model {
 			}
 		}
 
+
+				
+					$this->db->query("DELETE FROM " . DB_PREFIX . "product_to_multistore WHERE product_id = '" . (int)$product_id . "'");
+
+					if (isset($data['multistores'])) {
+						foreach ($data['multistores'] as $multistore_id => $quantity) {
+							$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_multistore SET product_id = '" . (int)$product_id . "', multistore_id = '" . (int)$multistore_id . "', quantity = '" . (int)$quantity . "'");
+						}
+
+						$this->db->query("UPDATE " . DB_PREFIX . "product p SET quantity = (SELECT SUM(quantity) AS quantity FROM `" . DB_PREFIX . "product_to_multistore` op2m WHERE op2m.product_id = p.product_id) WHERE p.product_id = '" . (int)$product_id . "'");
+					}
 		$this->db->query("DELETE FROM " . DB_PREFIX . "product_to_category WHERE product_id = '" . (int)$product_id . "'");
 
 		if (isset($data['product_category'])) {
@@ -507,6 +574,22 @@ class ModelCatalogProduct extends Model {
 			$data['product_layout'] = $this->getProductLayouts($product_id);
 			$data['product_store'] = $this->getProductStores($product_id);
 			$data['product_recurrings'] = $this->getRecurrings($product_id);
+				
+					// Multistore Start
+					$this->load->model('extension/module/multistore');
+					$data['multistores'] = array();
+					foreach($this->model_extension_module_multistore->getProductMultistores($product_id) as $multistore){
+						$data['multistores'][$multistore['multistore_id']] = $multistore['quantity'];
+					};
+					// Multistore End
+				
+					// Multistore Start
+					$this->load->model('extension/module/multistore');
+					$data['multistores'] = array();
+					foreach($this->model_extension_module_multistore->getProductMultistores($product_id) as $multistore){
+						$data['multistores'][$multistore['multistore_id']] = $multistore['quantity'];
+					};
+					// Multistore End
 
 			$this->addProduct($data);
 		}
@@ -728,6 +811,10 @@ class ModelCatalogProduct extends Model {
 	}
 
 	public function getProductOptions($product_id) {
+				
+					$this->load->model('extension/module/multistore');
+				
+					$this->load->model('extension/module/multistore');
 		$product_option_data = array();
 
 		$product_option_query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "product_option` po LEFT JOIN `" . DB_PREFIX . "option` o ON (po.option_id = o.option_id) LEFT JOIN `" . DB_PREFIX . "option_description` od ON (o.option_id = od.option_id) WHERE po.product_id = '" . (int)$product_id . "' AND od.language_id = '" . (int)$this->config->get('config_language_id') . "'");
@@ -738,7 +825,25 @@ class ModelCatalogProduct extends Model {
 			$product_option_value_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "product_option_value pov LEFT JOIN " . DB_PREFIX . "option_value ov ON(pov.option_value_id = ov.option_value_id) WHERE pov.product_option_id = '" . (int)$product_option['product_option_id'] . "' ORDER BY ov.sort_order ASC");
 
 			foreach ($product_option_value_query->rows as $product_option_value) {
+				
+					// Multistore Start
+					$product_option_value['multistores'] = array();
+					foreach($this->model_extension_module_multistore->getProductOptionValueMultistores($product_option_value['product_option_value_id']) as $multistore){
+						$product_option_value['multistores'][$multistore['multistore_id']] = $multistore['quantity'];
+					};
+					// Multistore End
+				
+					// Multistore Start
+					$product_option_value['multistores'] = array();
+					foreach($this->model_extension_module_multistore->getProductOptionValueMultistores($product_option_value['product_option_value_id']) as $multistore){
+						$product_option_value['multistores'][$multistore['multistore_id']] = $multistore['quantity'];
+					};
+					// Multistore End
 				$product_option_value_data[] = array(
+				
+					'multistores' => !empty($product_option_value['multistores']) ? $product_option_value['multistores'] : array(),
+				
+					'multistores' => !empty($product_option_value['multistores']) ? $product_option_value['multistores'] : array(),
 					'product_option_value_id' => $product_option_value['product_option_value_id'],
 					'option_value_id'         => $product_option_value['option_value_id'],
 					'quantity'                => $product_option_value['quantity'],

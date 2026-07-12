@@ -476,7 +476,10 @@ class ControllerProductSearch extends Controller {
 				$product_quantity = $result['quantity'];
 				$stock_status = $result['stock_status'];
 	
+
+				$multistore = false;
 				$data['products'][] = array(
+					'multistore'  => $multistore,
 
 					'price_no_format' 		=> $price_no_format,
 					'special_no_format' 	=> $special_no_format,	

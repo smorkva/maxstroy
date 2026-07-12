@@ -104,6 +104,8 @@ class ControllerExtensionModuleFeatured extends Controller {
 				$product_info = $this->model_catalog_product->getProduct($product_id);
 
 				if ($product_info) {
+
+				$multistore = false;
 					if ($product_info['image']) {
 						$image = $this->model_tool_image->resize($product_info['image'], $setting['width'], $setting['height']);
 					} else {
@@ -238,6 +240,7 @@ class ControllerExtensionModuleFeatured extends Controller {
 			$stock_status = $product_info['stock_status'];
 		
 					$data['products'][] = array(
+					'multistore'  => $multistore,
 
 		'product_quantity' 		=> $product_quantity,
 		'stock_status' 			=> $stock_status,

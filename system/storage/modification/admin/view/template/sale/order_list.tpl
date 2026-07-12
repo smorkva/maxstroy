@@ -208,6 +208,9 @@
                     <?php } else { ?>
                     <a href="<?php echo $sort_date_modified; ?>"><?php echo $column_date_modified; ?></a>
                     <?php } ?></td>
+
+				
+					<td class="text-right"><?php echo $column_multistore; ?></td>
                   <td class="text-right"><?php echo $column_action; ?></td>
                 </tr>
               </thead>
@@ -375,6 +378,21 @@
                   <td class="text-right"><?php echo $order['total']; ?></td>
                   <td class="text-left"><?php echo $order['time_date_added']; ?></td>
                   <td class="text-left"><?php echo $order['date_modified']; ?></td>
+				
+					<td class="text-right">
+						<div class="form-group">
+							<select name="multistore_id[<?php echo $order['order_id']; ?>]" class="form-control">
+								<option value=""><?php echo $text_select; ?></option>
+								<?php foreach($multistores as $multistore) { ?>
+									<?php if ($multistore['multistore_id'] == $order['multistore_id']) { ?>
+										<option value="<?php echo $multistore['multistore_id']; ?>" selected="selected"><?php echo $multistore['name']; ?></option>
+									<?php } else { ?>
+										<option value="<?php echo $multistore['multistore_id']; ?>"><?php echo $multistore['name']; ?></option>
+									<?php } ?>
+								<?php } ?>
+							</select>
+						</div>
+					</td>
                   <td class="text-right" style="min-width:150px;"><a href="<?php echo $order['view']; ?>" data-toggle="tooltip" title="<?php echo $button_view; ?>" class="btn btn-info"><i class="fa fa-eye"></i></a> <a href="<?php echo $order['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a></td>
                 </tr>
                 <?php } ?>
@@ -838,6 +856,42 @@ $('.date').datetimepicker({
 	pickTime: false
 });
 //--></script></div>
+
+				
+					<script>
+						$('select[name*=multistore_id]').on('change', function(){
+							const order_id = $(this).attr('name').match(/\[(.*)\]/).pop();
+							const multistore_id = $(this).val();
+              const input = $(this);
+
+							$.ajax({
+								url: 'index.php?route=extension/module/multistore/changeOrderMultistore&token=<?php echo $token; ?>',
+								data: {
+									'multistore_id': multistore_id,
+									'order_id': order_id
+								},
+								type: 'post',
+								dataType: 'json',
+								beforeSend: function() {
+									$(input).prop('disabled', true);
+									$(input).parent().removeClass('has-warning').removeClass('has-success');
+								},
+								complete: function() {
+									$(input).prop('disabled', false);
+								},
+								success: function(json) {
+									if (json['error']) {
+										$(input).parent().addClass('has-warning');
+									} else {
+										$(input).parent().addClass('has-success');
+									}
+								},
+								error: function(xhr, ajaxOptions, thrownError) {
+									alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+								}
+							});
+						});
+					</script>
 <?php echo $footer; ?> 
 
 		<style>

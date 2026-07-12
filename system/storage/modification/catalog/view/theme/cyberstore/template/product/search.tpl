@@ -339,6 +339,12 @@
 				</span>
 				 <?php } ?>
 				 <div class="pq-box">
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
 				   <?php if ($product['price']) { ?>
 					<p class="price">
 						<!-- here price <?php print_r($product['dimm'])?> -->

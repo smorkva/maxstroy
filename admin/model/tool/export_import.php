@@ -931,10 +931,28 @@ class ModelToolExportImport extends Model {
 			}
 			$this->db->query($sql);
 		}
+		$inserted_store_ids = array();
 		foreach ($store_ids as $store_id) {
 			if (in_array((int)$store_id,$available_store_ids)) {
 				$sql = "INSERT INTO `".DB_PREFIX."product_to_store` (`product_id`,`store_id`) VALUES ($product_id,$store_id);";
 				$this->db->query($sql);
+				$inserted_store_ids[] = (int)$store_id;
+			}
+		}
+		// Fallback: if no stores assigned, use default store (0) so product is visible
+		if (empty($inserted_store_ids)) {
+			$this->db->query("INSERT INTO `".DB_PREFIX."product_to_store` (`product_id`,`store_id`) VALUES ($product_id, 0)");
+		}
+		// Auto-populate product_to_multistore for all active stores so quantity works
+		$ms_table_check = $this->db->query("SHOW TABLES LIKE '".DB_PREFIX."multistore'");
+		if ($ms_table_check->num_rows) {
+			$ms_query = $this->db->query("SELECT multistore_id, infinity FROM `".DB_PREFIX."multistore` WHERE status = 1");
+			foreach ($ms_query->rows as $ms) {
+				$exists = $this->db->query("SELECT 1 FROM `".DB_PREFIX."product_to_multistore` WHERE product_id = '".(int)$product_id."' AND multistore_id = '".(int)$ms['multistore_id']."'");
+				if (!$exists->num_rows) {
+					$qty = (int)$ms['infinity'] ? 99999 : 0;
+					$this->db->query("INSERT INTO `".DB_PREFIX."product_to_multistore` (product_id, multistore_id, quantity) VALUES ('".(int)$product_id."', '".(int)$ms['multistore_id']."', '".$qty."')");
+				}
 			}
 		}
 		$layouts = array();
@@ -1259,6 +1277,19 @@ class ModelToolExportImport extends Model {
 			$product['tags'] = $tags;
 			$product['sort_order'] = $sort_order;
 			if ($incremental) {
+				// Preserve existing categories/stores/related if not provided in import file
+				if (empty($product['categories'])) {
+					$existing = $this->db->query("SELECT category_id FROM `".DB_PREFIX."product_to_category` WHERE product_id = '".(int)$product_id."'");
+					$preserved_cats = array();
+					foreach ($existing->rows as $r) { $preserved_cats[] = $r['category_id']; }
+					if (!empty($preserved_cats)) $product['categories'] = $preserved_cats;
+				}
+				if (empty($product['store_ids'])) {
+					$existing = $this->db->query("SELECT store_id FROM `".DB_PREFIX."product_to_store` WHERE product_id = '".(int)$product_id."'");
+					$preserved_stores = array();
+					foreach ($existing->rows as $r) { $preserved_stores[] = $r['store_id']; }
+					if (!empty($preserved_stores)) $product['store_ids'] = $preserved_stores;
+				}
 				$this->deleteProduct( $product_id, $exist_table_product_tag );
 			}
 			$available_product_ids[$product_id] = $product_id;

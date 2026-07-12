@@ -137,6 +137,12 @@
             <?php } ?>
             <li><h3><?php echo $text_stock; ?> <b><?php echo $stock; ?></b></h3></li>
           </ul>
+
+				
+					<?php if ($multistore) echo $multistore; ?>
+
+				
+					<?php if ($multistore) echo $multistore; ?>
           <?php if ($price) { ?>
           <ul class="list-unstyled">
             <?php if (!$special) { ?>
@@ -351,6 +357,12 @@
                 <?php } ?>
               </div>
               <?php } ?>
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
               <?php if ($product['price']) { ?>
               <p class="price">
                 <?php if (!$product['special']) { ?>

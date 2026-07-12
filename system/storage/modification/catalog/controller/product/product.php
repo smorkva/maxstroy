@@ -37,16 +37,19 @@ class ControllerProductProduct extends Controller {
 		
 		if(!isset($this->request->get['path'])){
 			$group = $this->model_catalog_category->getCategoryOfProduct($product_id);
-			
-			$path = $group['parent_id'].'_'.$group['category_id'];
-			
-			$cat = $this->model_catalog_category->getCategory($group['parent_id']);
-			while($cat && $cat['parent_id']){
-				$cat = $this->model_catalog_category->getCategory($cat['parent_id']);
-				$path = $cat['category_id'] . '_' . $path;
+
+			if ($group && isset($group['category_id'])) {
+				$parent_id = isset($group['parent_id']) ? $group['parent_id'] : 0;
+				$path = $parent_id.'_'.$group['category_id'];
+
+				$cat = $this->model_catalog_category->getCategory($parent_id);
+				while($cat && $cat['parent_id']){
+					$cat = $this->model_catalog_category->getCategory($cat['parent_id']);
+					$path = $cat['category_id'] . '_' . $path;
+				}
+
+				$this->request->get['path'] = $path;
 			}
-			
-			$this->request->get['path'] = $path;
 		}
 		
 		if (isset($this->request->get['path'])) {

@@ -327,6 +327,7 @@ $(".thumbnails .image-additional").slick({
 				<?php } ?>
 				
 				<hr>
+
 				<?php if ($price) { ?>
 					<span itemscope itemprop="offers" itemtype="http://schema.org/Offer">
 						<meta itemprop="price" content="<?php echo rtrim(preg_replace("/[^0-9\.]/", "", ($special ? $special : $price)), '.'); ?>">
@@ -723,6 +724,12 @@ $(".thumbnails .image-additional").slick({
 								</div>
 							<?php } ?>
 							<div class="pq-box">
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
 								<?php if ($product['price']) { ?>
 									<div class="price">
 									  <?php if (!$product['special']) { ?>

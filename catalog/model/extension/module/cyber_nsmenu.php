@@ -102,7 +102,7 @@ class ModelExtensionModuleCyberNsmenu extends Model {
 			'type' 				=> "freelink",
 			'thumb' 			=> $thumb_menu,
 			'thumb_hover' 		=> $thumb_menu_hover,
-			'add_html' 			=> (isset($add_html))?$add_html[$this->lang_id]:false,
+			'add_html' 			=> (isset($add_html) && is_array($add_html) && isset($add_html[$this->lang_id]))?$add_html[$this->lang_id]:false,
 			'children' 			=> $result['freelink_item'],
 			'href' 				=> (trim(isset($link[$this->lang_id]))) ? $link[$this->lang_id] : "javascript:void(0);",
 			'name' 				=> $namemenu[$this->lang_id],
@@ -241,7 +241,7 @@ class ModelExtensionModuleCyberNsmenu extends Model {
 			'thumb' 			=> $thumb,
 			'thumb_hover' 		=> $thumb_hover,
 			'children' 			=> $result['result_information'],
-			'add_html' 			=> (isset($add_html))?$add_html[$this->lang_id]:false,
+			'add_html' 			=> (isset($add_html) && is_array($add_html) && isset($add_html[$this->lang_id]))?$add_html[$this->lang_id]:false,
 			'href' 				=> (trim(isset($link[$this->lang_id]))) ? $link[$this->lang_id] : "javascript:void(0);",
 			'name' 				=> $namemenu[$this->lang_id],
 			'dop_info_vm' 		=> (isset($dop_info_vm[$this->lang_id])) ? $dop_info_vm[$this->lang_id]:'',
@@ -347,7 +347,7 @@ class ModelExtensionModuleCyberNsmenu extends Model {
 			'children' 				=> $data['result_manufacturer'],
 			'thumb' 				=> $thumb,
 			'thumb_hover' 			=> $thumb_hover,
-			'add_html' 			=> (isset($add_html))?$add_html[$this->lang_id]:false,
+			'add_html' 			=> (isset($add_html) && is_array($add_html) && isset($add_html[$this->lang_id]))?$add_html[$this->lang_id]:false,
 			'href' 					=> (trim(isset($link[$this->lang_id]))) ? $link[$this->lang_id] : "javascript:void(0);",
 			'name' 					=> $namemenu[$this->lang_id],
 			'dop_info_vm' 		=> (isset($dop_info_vm[$this->lang_id])) ? $dop_info_vm[$this->lang_id]:'',
@@ -459,7 +459,7 @@ class ModelExtensionModuleCyberNsmenu extends Model {
 			'spctext' 			=> $data['spctext'],
 			'additional_menu' 	=> $data['additional_menu'],
 			'new_blank' 		=> (isset($data['new_blank']))?$data['new_blank']:'0',
-			'add_html' 			=> (isset($add_html))?$add_html[$this->lang_id]:false,
+			'add_html' 			=> (isset($add_html) && is_array($add_html) && isset($add_html[$this->lang_id]))?$add_html[$this->lang_id]:false,
 			'thumb' 			=> $thumb_menu,
 			'thumb_hover' 		=> $thumb_menu_hover,
 		);
@@ -640,7 +640,7 @@ class ModelExtensionModuleCyberNsmenu extends Model {
 			'spctext' 			=> $data['spctext'],
 			'additional_menu' 	=> $data['additional_menu'],
 			'new_blank' 		=> '0',
-			'add_html' 			=> (isset($add_html))?$add_html[$this->lang_id]:false,
+			'add_html' 			=> (isset($add_html) && is_array($add_html) && isset($add_html[$this->lang_id]))?$add_html[$this->lang_id]:false,
 		);
 		return $type_link_data['result_menu_category'];
 		

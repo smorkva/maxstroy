@@ -203,6 +203,12 @@
 		</div>
 		<?php } ?>
 		<div class="pq-box">
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
+
+				
+					<?php if ($product['multistore']) echo $product['multistore']; ?>
         <?php if ($product['price']) { ?>
         <div class="price">
           <?php if (!$product['special']) { ?>

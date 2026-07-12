@@ -28,6 +28,8 @@
           <ul class="nav nav-tabs">
             <li class="active"><a href="#tab-general" data-toggle="tab"><?php echo $tab_general; ?></a></li>
             <li><a href="#tab-data" data-toggle="tab"><?php echo $tab_data; ?></a></li>
+				
+					<li><a href="#tab-multistore" data-toggle="tab"><?php echo $tab_multistore; ?></a></li>
             <li><a href="#tab-links" data-toggle="tab"><?php echo $tab_links; ?></a></li>
 
         <?php if (isset($tabs_product_on_off['status']) && $tabs_product_on_off['status']) { ?>
@@ -181,7 +183,11 @@
               <div class="form-group">
                 <label class="col-sm-2 control-label" for="input-quantity"><?php echo $entry_quantity; ?></label>
                 <div class="col-sm-10">
-                  <input type="text" name="quantity" value="<?php echo $quantity; ?>" placeholder="<?php echo $entry_quantity; ?>" id="input-quantity" class="form-control" />
+
+				
+					<input type="text" name="quantity" value="<?php echo $quantity; ?>" placeholder="<?php echo $entry_quantity; ?>" id="input-quantity" class="form-control" readonly/>
+				
+			
                 </div>
               </div>
               <div class="form-group">
@@ -331,6 +337,18 @@
                 </div>
               </div>
             </div>
+
+				
+					<div class="tab-pane" id="tab-multistore">
+						<?php foreach ($multistores as $multistore) { ?>
+						<div class="form-group">
+							<label class="col-sm-2 control-label" for="input-multistore-<?php echo $multistore['multistore_id']; ?>"><?php echo $multistore['name']; ?></label>
+							<div class="col-sm-10">
+								<input type="text" name="multistores[<?php echo $multistore['multistore_id']; ?>]" value="<?php echo $multistore['quantity']; ?>" id="input-multistore-<?php echo $multistore['multistore_id']; ?>" class="form-control" <?= $multistore['infinity'] ? 'readonly' : ''; ?> />
+							</div>
+						</div>
+						<?php } ?>
+					</div>
             <div class="tab-pane" id="tab-links">
               <div class="form-group">
                 <label class="col-sm-2 control-label" for="input-manufacturer"><span data-toggle="tooltip" title="<?php echo $help_manufacturer; ?>"><?php echo $entry_manufacturer; ?></span></label>
@@ -1447,7 +1465,24 @@ function addOptionValue(option_row) {
 	html += '  <td class="text-left"><select name="product_option[' + option_row + '][product_option_value][' + option_value_row + '][option_value_id]" class="form-control">';
 	html += $('#option-values' + option_row).html();
 	html += '  </select><input type="hidden" name="product_option[' + option_row + '][product_option_value][' + option_value_row + '][product_option_value_id]" value="" /></td>';
-	html += '  <td class="text-right"><input type="text" name="product_option[' + option_row + '][product_option_value][' + option_value_row + '][quantity]" value="" placeholder="<?php echo $entry_quantity; ?>" class="form-control" /></td>';
+
+				
+					html += '  <td class="text-right"><div class="quantity" data-option-id="' + option_row + '" data-option-value-id="' + option_value_row + '"><div class="input-group" style="width: 300px;">';
+					html += '  	<input type="text" name="product_option[' + option_row + '][product_option_value][' + option_value_row + '][quantity]" value="0" placeholder="<?php echo $entry_quantity; ?>" class="form-control" readonly />';
+					html += '  	<span class="input-group-btn">';
+					html += '  		<button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapse-option-' + option_row + '-' + option_value_row + '"><i class="fa fa-arrow-down" aria-hidden="true"></i></button>';
+					html += '  	</span>';
+					html += '  </div>';
+					html += '  <div class="collapse" id="collapse-option-' + option_row + '-' + option_value_row + '">';
+											<?php foreach ($multistores as $multistore) { ?>
+					html += '  		<div class="multistore">';
+					html += '  			<div class="multistore__name"><?php echo $multistore['name']; ?></div>';
+					html += '  			<div class="multistore__value"><input type="text" data-multistore-id="<?php echo $multistore['multistore_id']; ?>" class="form-control text-center" name="product_option[' + option_row + '][product_option_value][' + option_value_row + '][multistores][<?php echo $multistore['multistore_id']; ?>]" value=" <?= $multistore['infinity'] ? '99999' : '0'; ?>" <?= $multistore['infinity'] ? 'readonly' : ''; ?>></div>';
+					html += '  		</div>';
+											<?php } ?>
+					html += '  </div></div></td>';
+				
+			
 	html += '  <td class="text-left"><select name="product_option[' + option_row + '][product_option_value][' + option_value_row + '][subtract]" class="form-control">';
 	html += '    <option value="1"><?php echo $text_yes; ?></option>';
 	html += '    <option value="0"><?php echo $text_no; ?></option>';
@@ -1591,4 +1626,50 @@ $('.datetime').datetimepicker({
 $('#language a:first').tab('show');
 $('#option a:first').tab('show');
 //--></script></div>
+
+				
+				<script>
+				$('input[name^=multistore]').on('input', function(){
+					let quantity = 0;
+					$('input[name^=multistore]').each(function(i, el){
+						quantity += Number($(this).val());
+					});
+					$('input[name=quantity]').val(quantity);
+				});
+
+				$(document).delegate('[data-multistore-id]', 'input', function(){
+
+					let quantity = 0;
+					let option_id = $(this).parents('.quantity').data('option-id');
+					let optiov_value_id = $(this).parents('.quantity').data('option-value-id');
+
+					$(this).parents('.quantity').find('.multistore input').each(function(i, el){
+						quantity += Number($(this).val());
+					});
+
+					$(`[name="product_option[${option_id}][product_option_value][${optiov_value_id}][quantity]"]`).val(quantity);
+				});
+				</script>
+				<style>
+					.multistore {
+						display: flex;
+						align-items: center;
+						width: 100%;
+						margin: 5px 0;
+					}
+
+					.multistore__name {
+						flex: 0 0 40%;
+						max-width: 40%;
+						padding-right: 10px;
+						overflow: hidden;
+						word-break: break-word;
+						white-space: normal;
+					}
+
+					.multistore__value {
+						flex: 0 0 60%;
+						max-width: 60%;
+					}
+				</style>
 <?php echo $footer; ?>

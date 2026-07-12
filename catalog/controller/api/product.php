@@ -23,37 +23,17 @@ class ControllerApiProduct extends Controller {
 		// length_class_id
 
 		if($exist){
-			$exist['product_description'] = [
-				2 => [
-					'name' => $item['name'],
-					'description' => $exist['description'],
-					'tag' => '',
-					'meta_title' => $exist['meta_title'],
-					'meta_description' => $exist['meta_description'],
-					'meta_keyword' => $exist['meta_keyword'],
-				]
-			];
-			$exist['product_store'] = [0];
-			$exist['product_category'] = [$item['group_id']];
+			$stock_status_id = ($item['count'] > 0) ? 7 : 5;
 
-			$exist['quantity'] = $item['count'];
-			$exist['price'] = $item['price'];
-			$exist['status'] = $item['active'];
-				
-			$exist['image'] = 'catalog/import/'.$item['id'].'.jpg';
-			$exist['length_class_id'] = $dimensions[$item['dimension_id']];
-			if (!isset($dimensions[$item['dimension_id']])) {
-			    $this->log("Dim" . $item['dimension_id']);
+			$this->db->query("UPDATE " . DB_PREFIX . "product SET quantity = '" . (int)$item['count'] . "', price = '" . (float)$item['price'] . "', price_zak = '" . (float)$item['price'] . "', status = '" . (int)$item['active'] . "', stock_status_id = '" . (int)$stock_status_id . "', length_class_id = '" . (int)$dimensions[$item['dimension_id']] . "', date_modified = NOW() WHERE product_id = '" . (int)$item['id'] . "'");
+
+			$this->db->query("UPDATE " . DB_PREFIX . "product_description SET name = '" . $this->db->escape($item['name']) . "' WHERE product_id = '" . (int)$item['id'] . "' AND language_id = '2'");
+
+			// Update category from group_id
+			if (!empty($item['group_id'])) {
+				$this->db->query("DELETE FROM " . DB_PREFIX . "product_to_category WHERE product_id = '" . (int)$item['id'] . "'");
+				$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_category SET product_id = '" . (int)$item['id'] . "', category_id = '" . (int)$item['group_id'] . "'");
 			}
-			
-
-			if ($item['count'] > 0) {
-				$exist['stock_status_id'] = 7;
-			} else
-			$exist['stock_status_id'] = 5;
-
-			$this->model_catalog_importproduct->importProduct($item['id'], $exist);
-			//$this->json['edit'][$item['id']] = $item['name'];
 		} else {
 			$exist = [
 				'product_id' => $item['id'],
@@ -96,15 +76,9 @@ class ControllerApiProduct extends Controller {
 						'meta_keyword' => '',
 					]
 				],
-				'product_category' => [$item['group_id']],
+				'product_category' => !empty($item['group_id']) ? [$item['group_id']] : [],
 				'keyword' => null,
 			];
-
-			$exist['product_store'] = [0];
-			$exist['product_category'] = [];
-			foreach($this->model_catalog_importproduct->getCategories($item['id']) as $row) {
-				$exist['product_category'][] = $row['category_id'];
-			}
 
 			$exist['quantity'] = $item['count'];
 			$exist['price'] = $item['price'];
@@ -113,7 +87,7 @@ class ControllerApiProduct extends Controller {
 			}
 			//$this->json['edit'][] = $item['name'];
 
-			$this->model_catalog_importproduct->addProduct($exist);//*/
+			$this->model_catalog_importproduct->addProduct($exist);
 		}
 		//print_r($item);
 	}
@@ -183,7 +157,6 @@ class ControllerApiProduct extends Controller {
 	}
 	
 	public function index() {
-		
 		$this->load->language('api/product');
 
 		$this->json = array(
@@ -196,9 +169,11 @@ class ControllerApiProduct extends Controller {
 		} else {
 			$this->load->model('catalog/importcategory');
 			$this->load->model('catalog/importproduct');
-			
+
 			$postData = file_get_contents('php://input');
 			$data = json_decode($postData, true);
+
+			file_put_contents(DIR_LOGS . 'multistore_api.log', date('Y-m-d H:i:s') . ' raw_len=' . strlen($postData) . ' raw_start=' . substr($postData, 0, 200) . ' POST=' . print_r($this->request->post, true) . PHP_EOL, FILE_APPEND);
 			
 			$this->log->write($postData);
 			
@@ -209,12 +184,50 @@ class ControllerApiProduct extends Controller {
 				}
 			}
 			
-			if(isset($data['items'])) {
+			if (!isset($data['store_id']) || !$data['store_id']) {
+				$this->json['error'] = 'store_id is required';
+				$this->response->addHeader('Content-Type: application/json');
+				$this->response->setOutput(json_encode($this->json));
+				return;
+			}
+
+			$multistore_id = (int)$data['store_id'];
+
+			$this->db->query("SET AUTOCOMMIT=0");
+			$this->db->query("START TRANSACTION");
+
+			if(isset($data['items']) && $multistore_id) {
+				// Delete all existing quantities for this multistore in one query
+				$product_ids = array();
+				foreach($data['items'] as $item) {
+					$product_ids[] = (int)$item['id'];
+				}
+
+				if ($product_ids) {
+					$this->db->query("DELETE FROM " . DB_PREFIX . "product_to_multistore WHERE multistore_id = '" . (int)$multistore_id . "' AND product_id IN (" . implode(',', $product_ids) . ")");
+				}
+
+				// Insert all multistore quantities and sync products
+				$insert_values = array();
+				foreach($data['items'] as $item) {
+					$this->syncItem($item);
+					$insert_values[] = "('" . (int)$item['id'] . "', '" . (int)$multistore_id . "', '" . (int)$item['count'] . "')";
+				}
+
+				if ($insert_values) {
+					$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_multistore (product_id, multistore_id, quantity) VALUES " . implode(',', $insert_values));
+
+					// Batch update product.quantity as sum of all multistores
+					$this->db->query("UPDATE " . DB_PREFIX . "product p SET quantity = COALESCE((SELECT SUM(quantity) FROM " . DB_PREFIX . "product_to_multistore WHERE product_id = p.product_id), 0) WHERE p.product_id IN (" . implode(',', $product_ids) . ")");
+				}
+			} elseif (isset($data['items'])) {
 				foreach($data['items'] as $item) {
 					$this->syncItem($item);
 				}
 			}
-			
+
+			$this->db->query("COMMIT");
+			$this->db->query("SET AUTOCOMMIT=1");
 		}
 
 		if (isset($this->request->server['HTTP_ORIGIN'])) {

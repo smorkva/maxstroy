@@ -227,6 +227,120 @@ google.maps.event.addDomListener(window, 'load', initialize);
 </footer>
 
                 <script>
+                // Mobile multistore selector
+                $(document).ready(function(){
+                  var $ms = $('#multistore-selector');
+                  if ($ms.length && $('#top-fixed-mobile').length) {
+                    var $clone = $ms.clone().attr('id','multistore-selector-mobile');
+                    $clone.find('span.hidden-xs, span.hidden-sm').removeClass('hidden-xs hidden-sm').addClass('ms-mob-name');
+                    var $wrap = $('<div class="mob-m-i multistore_fix_mob"></div>').append($clone);
+                    $('#top-fixed-mobile .box-fm-r').prepend($wrap);
+                    $clone.find('.multistore-select').on('click', function(){
+                      var id = $(this).data('id');
+                      $.post('index.php?route=common/multistore_selector/set', {multistore_id: id}, function(){
+                        location.reload();
+                      });
+                    });
+                  }
+
+                  // Apply phones for current multistore
+                  if (typeof multistorePhones !== 'undefined') {
+                    var currentId = $('#multistore-selector .multistore-select[style*="bold"]').data('id');
+                    if (currentId && multistorePhones[currentId] && multistorePhones[currentId].length > 0) {
+                      var phones = multistorePhones[currentId];
+
+                      // Header: main phone (first in list)
+                      var $mainTel = $('#phone .contact-header .additional-tel.dth a');
+                      if ($mainTel.length && phones[0]) {
+                        var iconHtml = phones[0].icon ? '<div class="icon-image"><i class="' + phones[0].icon + '"></i></div>' : '';
+                        $mainTel.html(iconHtml + phones[0].number);
+                      }
+                      // Header: text under main phone
+                      var $textAfter = $('#phone .text_after_phone');
+                      if ($textAfter.length && phones[0]) {
+                        $textAfter.text(phones[0].name);
+                      }
+                      // Header: dropdown phones (rest)
+                      var $dropList = $('#phone .contact-header .dropdown-menu.drop-contacts');
+                      if ($dropList.length) {
+                        $dropList.empty();
+                        for (var i = 1; i < phones.length; i++) {
+                          var p = phones[i];
+                          var pIcon = p.icon ? '<div class="icon-image"><i class="' + p.icon + '"></i></div>' : '';
+                          $dropList.append('<li><a>' + pIcon + p.number + '</a></li>');
+                        }
+                      }
+
+                      // Footer: "Наші Контакти" block
+                      var $footerContact = null;
+                      $('footer .title-f').each(function() {
+                        if ($(this).text().indexOf('Контакти') !== -1) {
+                          $footerContact = $(this).next('ul.list-unstyled');
+                        }
+                      });
+                      if ($footerContact && $footerContact.length) {
+                        $footerContact.empty();
+                        for (var j = 0; j < phones.length; j++) {
+                          var fp = phones[j];
+                          var fIcon = fp.icon ? '<i class="' + fp.icon + ' fa-width"></i> ' : '';
+                          $footerContact.append('<li><a>' + fIcon + fp.number + ' ' + fp.name + '</a></li>');
+                        }
+                      }
+                    }
+                  }
+
+                  // Apply map for current multistore
+                  if (typeof multistoreMapData !== 'undefined') {
+                    var mapStoreId = $('#multistore-selector .multistore-select[style*="bold"]').data('id');
+                    if (mapStoreId && multistoreMapData[mapStoreId]) {
+                      var md = multistoreMapData[mapStoreId];
+                      if (md.lat && md.lng) {
+                        // Handle iframe embed map (codemap mode)
+                        var $mapIframe = $('footer .fdesc_fmap iframe[src*="google.com/maps"]');
+                        if ($mapIframe.length) {
+                          var zoom = md.zoom || 14;
+                          var title = encodeURIComponent(md.marker_title || '');
+                          var newSrc = 'https://www.google.com/maps?q=' + md.lat + ',' + md.lng + '&z=' + zoom + '&output=embed';
+                          $mapIframe.attr('src', newSrc);
+                        }
+                        // Handle JS API map (gmap mode)
+                        var gmapEl = document.getElementById('gmap_footer');
+                        if (gmapEl && typeof google !== 'undefined' && google.maps) {
+                          var newCenter = new google.maps.LatLng(parseFloat(md.lat), parseFloat(md.lng));
+                          var map = new google.maps.Map(gmapEl, {
+                            zoom: parseInt(md.zoom) || 14,
+                            center: newCenter,
+                            mapTypeId: google.maps.MapTypeId.ROADMAP
+                          });
+                          var marker = new google.maps.Marker({ position: newCenter, map: map, title: md.marker_title || '' });
+                          if (md.marker_title) {
+                            var iw = new google.maps.InfoWindow({ content: '<div class="title_popap_marker">' + md.marker_title + '</div>' });
+                            google.maps.event.addListener(marker, 'click', function() { iw.open(map, marker); });
+                          }
+                        }
+                      }
+                    }
+                  }
+                });
+                </script>
+                <style>
+                .multistore_fix_mob { display: inline-block; vertical-align: middle; }
+                .multistore_fix_mob #multistore-selector-mobile { display: block; width: 40px; height: 40px; text-align: center; }
+                .multistore_fix_mob .dropdown-toggle { color: #fff !important; background: none !important; border: none !important; padding: 0 0 4px 0; width: 40px; height: 40px; line-height: 36px; text-align: center; display: block; text-decoration: none !important; }
+                .multistore_fix_mob .dropdown-toggle:hover, .multistore_fix_mob .dropdown-toggle:focus, .multistore_fix_mob .dropdown-toggle span, .multistore_fix_mob .dropdown-toggle:hover span { text-decoration: none !important; }
+                .multistore_fix_mob .dropdown-toggle .fa-map-marker { font-size: 22px; vertical-align: middle; }
+                .multistore_fix_mob .dropdown-toggle .fa-caret-down { font-size: 10px; vertical-align: middle; margin-left: 0; }
+                .multistore_fix_mob .ms-mob-name { display: none; }
+                @media (min-width: 480px) {
+                  .multistore_fix_mob .ms-mob-name { display: inline; }
+                  .multistore_fix_mob #multistore-selector-mobile,
+                  .multistore_fix_mob .dropdown-toggle { width: auto; }
+                }
+                .multistore_fix_mob .dropdown-menu { min-width: 160px; }
+                .multistore_fix_mob .dropdown-menu .btn-link { color: #333; text-align: left; white-space: nowrap; }
+                </style>
+
+                <script>
                      function validateEmail($email) {
                         var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
                         return emailReg.test( $email );

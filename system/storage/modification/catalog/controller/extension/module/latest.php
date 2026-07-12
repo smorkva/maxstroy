@@ -118,6 +118,8 @@ class ControllerExtensionModuleLatest extends Controller {
 
 		if ($results) {
 			foreach ($results as $result) {
+
+				$multistore = false;
 				if ($result['image']) {
 					$image = $this->model_tool_image->resize($result['image'], $setting['width'], $setting['height']);
 				} else {
@@ -257,6 +259,7 @@ class ControllerExtensionModuleLatest extends Controller {
 			$stock_status = $result['stock_status'];
 		
 				$data['products'][] = array(
+					'multistore'  => $multistore,
 
 		'product_quantity' 		=> $product_quantity,
 		'stock_status' 			=> $stock_status,

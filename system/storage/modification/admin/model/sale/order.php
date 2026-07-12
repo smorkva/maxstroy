@@ -93,6 +93,8 @@ class ModelSaleOrder extends Model {
 
 			return array(
 				'order_id'                => $order_query->row['order_id'],
+        
+					'multistore_id'           => (isset($order_query->row['multistore_id']) ? $order_query->row['multistore_id'] : ''),
 				'invoice_no'              => $order_query->row['invoice_no'],
 				'invoice_prefix'          => $order_query->row['invoice_prefix'],
 				'store_id'                => $order_query->row['store_id'],
@@ -171,7 +173,7 @@ class ModelSaleOrder extends Model {
 
 	public function getOrders($data = array()) {
 		 
-				$sql = "SELECT o.order_id, o.firstname, o.lastname, o.telephone, o.shipping_city, o.shipping_address_1, o.email, o.comment_manager, o.calculated_summ, o.manager_process_orders,  o.delivery_price, o.build_price, o.build_price_yes_no, o.build_price_prefix, o.rise_product_price, o.rise_product_yes_no, o.rise_product_price_prefix, o.payment_method, o.shipping_method, o.text_ttn, CONCAT(o.firstname, ' ', o.lastname) AS customer,(SELECT os.row_color FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS row_color, o.order_status_id,(SELECT os.row_color_text FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS row_color_text, (SELECT os.name FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS order_status, o.shipping_code, o.total, o.currency_code, o.currency_value, o.date_added, o.date_modified FROM `" . DB_PREFIX . "order` o";
+				$sql = "SELECT o.order_id, o.multistore_id, o.firstname, o.lastname, o.telephone, o.shipping_city, o.shipping_address_1, o.email, o.comment_manager, o.calculated_summ, o.manager_process_orders,  o.delivery_price, o.build_price, o.build_price_yes_no, o.build_price_prefix, o.rise_product_price, o.rise_product_yes_no, o.rise_product_price_prefix, o.payment_method, o.shipping_method, o.text_ttn, CONCAT(o.firstname, ' ', o.lastname) AS customer,(SELECT os.row_color FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS row_color, o.order_status_id,(SELECT os.row_color_text FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS row_color_text, (SELECT os.name FROM " . DB_PREFIX . "order_status os WHERE os.order_status_id = o.order_status_id AND os.language_id = '" . (int)$this->config->get('config_language_id') . "') AS order_status, o.shipping_code, o.total, o.currency_code, o.currency_value, o.date_added, o.date_modified FROM `" . DB_PREFIX . "order` o";
 		
 
 		if (isset($data['filter_order_status'])) {

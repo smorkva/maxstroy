@@ -900,6 +900,33 @@ class ControllerCatalogProduct extends Controller {
 			$data['date_available'] = date('Y-m-d');
 		}
 
+
+        
+					$this->load->model('extension/module/multistore');
+					if (isset($this->request->get['product_id'])) {
+						$multistores = $this->model_extension_module_multistore->getProductMultistores($this->request->get['product_id']);
+					}
+					if (empty($multistores)) {
+						$multistores = $this->model_extension_module_multistore->getMultistores();
+					}
+					$data['multistores'] = array();
+					foreach($multistores as $multistore){
+
+						if ($multistore['infinity']) {
+							$quantity = 99999;
+						} elseif (isset($multistore['quantity'])) {
+							$quantity = $multistore['quantity'];
+						} else {
+							$quantity = 0;
+						}
+
+						$data['multistores'][] = array(
+							'multistore_id' => $multistore['multistore_id'],
+							'name' 					=> $multistore['name'],
+							'infinity' 			=> $multistore['infinity'],
+							'quantity' 			=> $quantity
+						);
+					}
 		if (isset($this->request->post['quantity'])) {
 			$data['quantity'] = $this->request->post['quantity'];
 		} elseif (!empty($product_info)) {
@@ -1123,7 +1150,36 @@ class ControllerCatalogProduct extends Controller {
 
 			if (isset($product_option['product_option_value'])) {
 				foreach ($product_option['product_option_value'] as $product_option_value) {
+
+        
+					$this->load->model('extension/module/multistore');
+					if (isset($this->request->get['product_id'])) {
+						$options_multistores = $this->model_extension_module_multistore->getProductOptionValueMultistores($product_option_value['product_option_value_id']);
+					} else {
+						$options_multistores = $this->model_extension_module_multistore->getMultistores();
+					}
+
+					$product_options_multistores = array();
+					foreach($options_multistores as $multistore){
+
+						if ($multistore['infinity']) {
+							$quantity = 99999;
+						} elseif (isset($multistore['quantity'])) {
+							$quantity = $multistore['quantity'];
+						} else {
+							$quantity = 0;
+						}
+
+						$product_options_multistores[] = array(
+							'multistore_id' => $multistore['multistore_id'],
+							'name' 					=> $multistore['name'],
+							'infinity' 			=> $multistore['infinity'],
+							'quantity' 			=> $quantity
+						);
+					}
 					$product_option_value_data[] = array(
+        
+					'multistores' => $product_options_multistores,
 						'product_option_value_id' => $product_option_value['product_option_value_id'],
 						'option_value_id'         => $product_option_value['option_value_id'],
 						'quantity'                => $product_option_value['quantity'],
@@ -1365,6 +1421,9 @@ class ControllerCatalogProduct extends Controller {
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
 
+
+        
+					$data['tab_multistore'] = $this->language->get('tab_multistore');
 		$this->response->setOutput($this->load->view('catalog/product_form', $data));
 	}
 
