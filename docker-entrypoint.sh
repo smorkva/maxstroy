@@ -92,4 +92,18 @@ PHPEOF
 
 echo "Config files generated. APP_URL=${APP_URL}, DB_HOST=${DB_HOSTNAME}"
 
+# Restore ocmod-generated files from the image over the storage volume.
+# These are version-controlled code, not runtime data: the volume shadows whatever
+# a newer build ships, so without this the server keeps running the modification/
+# files from whenever the volume was first created.
+if [ -d /opt/opencart/modification ]; then
+    rm -rf "${APP_DIR}/system/storage/modification"
+    cp -a /opt/opencart/modification "${APP_DIR}/system/storage/modification"
+    chown -R www-data:www-data "${APP_DIR}/system/storage/modification"
+    echo "Modification files restored from image ($(find "${APP_DIR}/system/storage/modification" -type f | wc -l) files)."
+fi
+
+# Drop the theme/data cache so the restored controllers take effect immediately
+find "${APP_DIR}/system/storage/cache" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+
 exec "$@"

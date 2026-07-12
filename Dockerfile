@@ -17,11 +17,16 @@ RUN apt-get update && apt-get install -y \
         curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install ionCube Loader (vendored to avoid depending on downloads.ioncube.com at build time)
+# Install ionCube Loader (vendored to avoid depending on downloads.ioncube.com at build time).
+# The vendored loader is x86-64 only, so this image must be built for linux/amd64.
+# On Apple Silicon: docker build --platform linux/amd64 .
 COPY docker/ioncube/ioncube_loader_lin_7.4.so /tmp/ioncube_loader_lin_7.4.so
 RUN cp /tmp/ioncube_loader_lin_7.4.so $(php -r 'echo ini_get("extension_dir");')/ioncube_loader_lin_7.4.so \
+    && chmod 644 $(php -r 'echo ini_get("extension_dir");')/ioncube_loader_lin_7.4.so \
     && echo "zend_extension=ioncube_loader_lin_7.4.so" > /usr/local/etc/php/conf.d/00-ioncube.ini \
-    && rm -f /tmp/ioncube_loader_lin_7.4.so
+    && rm -f /tmp/ioncube_loader_lin_7.4.so \
+    # Fail the build rather than ship an image where every encoded file is a fatal error
+    && php -v | grep -q "ionCube"
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -47,6 +52,13 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Copy application code
 COPY . /var/www/html/
+
+# Keep a pristine copy of the ocmod-generated files outside the storage volume.
+# system/storage is a named volume, which Docker populates from the image only on
+# first creation — so modification/ shipped in later builds would never reach the
+# server. The entrypoint restores it from here on every start.
+RUN mkdir -p /opt/opencart \
+    && cp -a /var/www/html/system/storage/modification /opt/opencart/modification
 
 # Ensure storage directories exist and are writable
 RUN mkdir -p /var/www/html/system/storage/cache \
