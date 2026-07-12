@@ -17,12 +17,11 @@ RUN apt-get update && apt-get install -y \
         curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install ionCube Loader
-RUN curl -fSL https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz -o /tmp/ioncube.tar.gz \
-    && tar -xzf /tmp/ioncube.tar.gz -C /tmp \
-    && cp /tmp/ioncube/ioncube_loader_lin_7.4.so $(php -r 'echo ini_get("extension_dir");')/ \
+# Install ionCube Loader (vendored to avoid depending on downloads.ioncube.com at build time)
+COPY docker/ioncube/ioncube_loader_lin_7.4.so /tmp/ioncube_loader_lin_7.4.so
+RUN cp /tmp/ioncube_loader_lin_7.4.so $(php -r 'echo ini_get("extension_dir");')/ioncube_loader_lin_7.4.so \
     && echo "zend_extension=ioncube_loader_lin_7.4.so" > /usr/local/etc/php/conf.d/00-ioncube.ini \
-    && rm -rf /tmp/ioncube /tmp/ioncube.tar.gz
+    && rm -f /tmp/ioncube_loader_lin_7.4.so
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite

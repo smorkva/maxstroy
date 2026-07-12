@@ -16,6 +16,7 @@ system/storage/upload/*
 
 # IDE / OS
 .DS_Store
+._*
 .idea/
 .vscode/
 *.swp
