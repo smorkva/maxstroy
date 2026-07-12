@@ -6,3 +6,5 @@ docker-compose.yml
 *.md
 ._*
 .DS_Store
+apply_ocmod.php
+php.ini

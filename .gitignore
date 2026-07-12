@@ -14,6 +14,10 @@ system/storage/upload/*
 *.sql
 !admin/model/cyberstore/cyberstore_1.sql
 
+# Local-only tooling and legacy shared-hosting config (never ship to the image)
+/apply_ocmod.php
+/php.ini
+
 # IDE / OS
 .DS_Store
 ._*

@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ALL & ~E_DEPRECATED);
 // Version
 define('VERSION', '2.3.0.2');
 
