@@ -29,7 +29,11 @@ RUN cp /tmp/ioncube_loader_lin_7.4.so $(php -r 'echo ini_get("extension_dir");')
     && php -v | grep -q "ionCube"
 
 # Enable Apache mod_rewrite
-RUN a2enmod rewrite
+RUN a2enmod rewrite remoteip \
+    && printf 'RemoteIPHeader X-Forwarded-For\nRemoteIPTrustedProxy 10.0.0.0/8\nRemoteIPTrustedProxy 172.16.0.0/12\n' \
+       > /etc/apache2/conf-available/remoteip.conf \
+    && a2enconf remoteip \
+    && sed -i 's/%h %l %u %t/%a %l %u %t/' /etc/apache2/apache2.conf
 
 # Configure Apache to allow .htaccess overrides
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
