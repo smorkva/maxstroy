@@ -5,6 +5,19 @@ RewriteBase /
 #RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 #RewriteRule ^(.*)$ http://%1/$1 [L,R=301]
 
+# Short addresses that pick a shop and drop the visitor on the front page.
+# They exist for the QR on the printed receipt: the full setter URL is three
+# times longer, and every character of it costs modules in the code — on
+# thermal paper that is the difference between a square a phone reads at once
+# and one it has to be held still for.
+#
+# The numbers are multistore_id in oc_multistore:
+#   1 — Михайлівка
+#   2 — Петро-Михайловка
+# Adding a shop means adding a line here, next to the name it belongs to.
+RewriteRule ^mh/?$ /index.php?route=common/multistore_selector/set&multistore_id=1 [L,QSA]
+RewriteRule ^pm/?$ /index.php?route=common/multistore_selector/set&multistore_id=2 [L,QSA]
+
 RewriteRule ^index\.php$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

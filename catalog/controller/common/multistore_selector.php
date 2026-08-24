@@ -63,9 +63,13 @@ class ControllerCommonMultistoreSelector extends Controller {
 	}
 
 	public function set() {
-		$json = array();
-
+		// The dropdown posts over AJAX and reloads the page itself, so it is
+		// answered with JSON as before. A link can only ever be a GET — a QR on
+		// a receipt, an address in a message — and the person following it must
+		// land on the shop, not on a JSON body, so that case redirects instead.
 		if (isset($this->request->post['multistore_id'])) {
+			$json = array();
+
 			$multistore_id = (int)$this->request->post['multistore_id'];
 			if ($multistore_id > 0) {
 				$this->session->data['multistore_id'] = $multistore_id;
@@ -73,11 +77,33 @@ class ControllerCommonMultistoreSelector extends Controller {
 				unset($this->session->data['multistore_id']);
 			}
 			$json['success'] = true;
-		} else {
-			$json['error'] = 'No multistore_id';
+
+			$this->response->addHeader('Content-Type: application/json');
+			$this->response->setOutput(json_encode($json));
+
+			return;
 		}
 
-		$this->response->addHeader('Content-Type: application/json');
-		$this->response->setOutput(json_encode($json));
+		// A link is public and can be edited by anyone who has it, so the id is
+		// only taken when it names a store that actually exists and is on. An
+		// unknown one would leave the session pointing at nothing, and the shop
+		// would then show a catalogue with everything filtered out.
+		if (isset($this->request->get['multistore_id'])) {
+			$multistore_id = (int)$this->request->get['multistore_id'];
+
+			$this->load->library('multistore');
+
+			foreach ($this->multistore->getMultistores() as $store) {
+				if ((int)$store['multistore_id'] === $multistore_id) {
+					$this->session->data['multistore_id'] = $multistore_id;
+					break;
+				}
+			}
+		}
+
+		// Fixed destination on purpose: a target read out of the query string
+		// would turn this into an open redirect — any link on our domain could
+		// then carry a customer off to someone else's site.
+		$this->response->redirect($this->url->link('common/home', '', true));
 	}
 }
