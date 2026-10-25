@@ -72,11 +72,11 @@ class ControllerAccountWishList extends Controller {
 
 		foreach ($results as $result) {
 			$product_info = $this->model_catalog_product->getProduct($result['product_id']);
-			if ($product_info['special'] == $product_info['price']) {
+			if ($product_info && $product_info['special'] == $product_info['price']) {
 				$product_info['special'] = false;
 			}
 
-			if ($product_info['special'] && ($product_info['special'] > $product_info['price'])) {
+			if ($product_info && $product_info['special'] && ($product_info['special'] > $product_info['price'])) {
 				$spec = $product_info['special'];
 				$product_info['special'] = $product_info['price'];
 				$product_info['price'] = $spec;
