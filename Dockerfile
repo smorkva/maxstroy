@@ -1,5 +1,8 @@
 FROM php:7.4-apache
 
+# Debian 11 security updates were moved to archive.debian.org; deb.debian.org now answers 404 for them.
+RUN sed -i 's|http://deb.debian.org/debian-security|http://archive.debian.org/debian-security|' /etc/apt/sources.list
+
 # Install PHP extensions required by OpenCart
 RUN apt-get update && apt-get install -y \
         libpng-dev \
