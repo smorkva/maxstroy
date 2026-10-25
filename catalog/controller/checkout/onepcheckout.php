@@ -1859,7 +1859,7 @@ class ControllerCheckoutOnepcheckout extends Controller {
 							$value = '';
 						}
                     } else {
-                        $filename = $this->encryption->decrypt(isset($option['option_value'])?$option['option_value']:isset($option['value'])?$option['value']:'');
+                        $filename = $this->encryption->decrypt($option['option_value'] ?? $option['value'] ?? '');
 
                         $value = utf8_substr($filename, 0, utf8_strrpos($filename, '.'));
                     }
