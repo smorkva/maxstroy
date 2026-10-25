@@ -193,6 +193,21 @@ class ControllerApiProduct extends Controller {
 
 			$multistore_id = (int)$data['store_id'];
 
+			if (isset($data['items'])) {
+				// 1C codes are used as product ids: a code that is not a positive number
+				// would become product_id 0 and write into rows of other products.
+				$items = array();
+				foreach ($data['items'] as $item) {
+					$id = trim((string)$item['id']);
+					if ($id !== '' && ctype_digit($id) && (int)$id > 0) {
+						$items[] = $item;
+					} else {
+						$this->json['skipped'][] = $item['id'];
+					}
+				}
+				$data['items'] = $items;
+			}
+
 			$this->db->query("SET AUTOCOMMIT=0");
 			$this->db->query("START TRANSACTION");
 
@@ -215,7 +230,8 @@ class ControllerApiProduct extends Controller {
 				}
 
 				if ($insert_values) {
-					$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_multistore (product_id, multistore_id, quantity) VALUES " . implode(',', $insert_values));
+					// addProduct() already adds rows for new products, and a code may repeat in a batch.
+					$this->db->query("INSERT INTO " . DB_PREFIX . "product_to_multistore (product_id, multistore_id, quantity) VALUES " . implode(',', $insert_values) . " ON DUPLICATE KEY UPDATE quantity = VALUES(quantity)");
 
 					// Batch update product.quantity as sum of all multistores
 					$this->db->query("UPDATE " . DB_PREFIX . "product p SET quantity = COALESCE((SELECT SUM(quantity) FROM " . DB_PREFIX . "product_to_multistore WHERE product_id = p.product_id), 0) WHERE p.product_id IN (" . implode(',', $product_ids) . ")");
