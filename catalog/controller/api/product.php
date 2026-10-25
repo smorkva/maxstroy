@@ -173,9 +173,9 @@ class ControllerApiProduct extends Controller {
 			$postData = file_get_contents('php://input');
 			$data = json_decode($postData, true);
 
-			file_put_contents(DIR_LOGS . 'multistore_api.log', date('Y-m-d H:i:s') . ' raw_len=' . strlen($postData) . ' raw_start=' . substr($postData, 0, 200) . ' POST=' . print_r($this->request->post, true) . PHP_EOL, FILE_APPEND);
+			// file_put_contents(DIR_LOGS . 'multistore_api.log', date('Y-m-d H:i:s') . ' raw_len=' . strlen($postData) . ' raw_start=' . substr($postData, 0, 200) . ' POST=' . print_r($this->request->post, true) . PHP_EOL, FILE_APPEND);
 			
-			$this->log->write($postData);
+			// $this->log->write($postData);
 			
 			if(isset($data['groups'])) {
 				//print_r($data['groups']);
