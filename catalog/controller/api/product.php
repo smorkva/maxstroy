@@ -164,7 +164,7 @@ class ControllerApiProduct extends Controller {
 			'create' => array(),
 		);
 
-		if (false){// !isset($this->session->data['api_id'])) {
+		if (!isset($this->session->data['api_id'])) {
 			$this->json['error'] = $this->language->get('error_permission');
 		} else {
 			$this->load->model('catalog/importcategory');
